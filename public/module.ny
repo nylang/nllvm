@@ -208,27 +208,13 @@ pub method(Module) EmitObjectEx(
   return status;
 }
 
-/** Cost-model inlining; retain ODR definitions used by other TUs. */
+/** Cost-model inlining honoring the module's explicit definition linkage. */
 method(Module) RunInlinePipeline(tm: TargetMachine) -> int32 {
-  var keep: Array<intptr> = Array<intptr>{};
-  var fn: *mut void = LLVMGetFirstFunction(self.handle);
-  while fn != (0 as *mut void) {
-    if (LLVMGetLinkage(fn) == 3) && (LLVMGetEntryBasicBlock(fn) != (0 as *mut void)) {
-      keep.Push(fn as intptr);
-      LLVMSetLinkage(fn, 6);
-    }
-    fn = LLVMGetNextFunction(fn);
-  }
   let options: *mut void = LLVMCreatePassBuilderOptions();
   let pipeline: string = "cgscc(inline)";
   var cpasses: owned <int8>[] = llvm_cstr_buf(pipeline);
   let err: *mut void = LLVMRunPasses(self.handle, (&mut cpasses[0]) as *const int8, tm.handle, options);
   LLVMDisposePassBuilderOptions(options);
-  var i: int32 = 0;
-  while i < keep.Len() {
-    LLVMSetLinkage(keep.Get(i) as *mut void, 3);
-    i = i + 1;
-  }
   if err != (0 as *mut void) {
     let message: *mut int8 = LLVMGetErrorMessage(err);
     if message != (0 as *mut int8) {
@@ -251,16 +237,11 @@ pub method(Module) Optimize(triple: string, cpu: string, features: string, level
   let machine: TargetMachine = target.CreateTargetMachineEx(triple, cpu, features, machine_level,relocation:relocation); if machine.handle == (0 as *mut void) { return 1; }
   let options: *mut void = LLVMCreatePassBuilderOptions();
   if options == (0 as *mut void) { machine.Dispose(); return 1; }
-  // Optimizing one TU must preserve definitions referenced by other TUs.
-  var retained:Array<string> =Array<string>{}; var function_ptr: *mut void = LLVMGetFirstFunction(self.handle);
-  while function_ptr != (0 as *mut void) {
-    if LLVMGetLinkage(function_ptr) == 3 && LLVMGetEntryBasicBlock(function_ptr) != (0 as *mut void) { var length:uintptr=0 as uintptr;let raw:*const int8=LLVMGetValueName2(function_ptr,&mut length);var name:string=string.Alloc(length as int32);memcpy(name.data as *mut uint8,raw as *const uint8,length);retained.Push(name);LLVMSetLinkage(function_ptr,6); }
-    function_ptr = LLVMGetNextFunction(function_ptr);
-  }
+  // Required exports carry external/weak_odr linkage at module construction.
+  // Leave linkonce_odr helpers discardable, as specified by LLVM semantics.
   var selected:string=pipeline;if selected.length==0{selected="default<".Concat(suffix).Concat(">");}var passes:owned <int8>[] =llvm_cstr_buf(selected);
   let error: *mut void = LLVMRunPasses(self.handle, (&mut passes[0]) as *const int8, machine.handle, options);
   LLVMDisposePassBuilderOptions(options); machine.Dispose();
-  var retained_index: int32 = 0; while retained_index < retained.Len() { let function:Value=self.NamedFunction(retained.Get(retained_index));if function.handle!=(0 as *mut void){LLVMSetLinkage(function.handle,3);} retained_index = retained_index + 1; }
   if error != (0 as *mut void) {
     let message: *mut int8 = LLVMGetErrorMessage(error);
     if message != (0 as *mut int8) { let length: int32 = string.StrLen(message as *const uint8) as int32; Console.Eprintln("[llvm] optimization: ".Concat(string.ViewFrom(message as *const int8, length))); LLVMDisposeErrorMessage(message); }

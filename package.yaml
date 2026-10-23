@@ -1,0 +1,17 @@
+# LLVM-C support package for the Core backend.
+name: llvm
+version: 0.0.1
+dependencies:
+  stdlib:
+    path: ../stdlib
+dev-dependencies:
+  ntest:
+    path: ../ntest
+directories:
+  interface:
+    - interface
+  public:
+    - public
+  private:
+    - tests
+    - private

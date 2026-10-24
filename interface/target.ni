@@ -1,7 +1,7 @@
 /**
  * @brief Product face for LLVM Target / TargetMachine / TargetData + emit helpers.
  * @note Handles are opaque; never `nyra_free`. Dispose TargetMachine / TargetData only.
- * @note DWARF / DIBuilder deferred (nyra-llvm.md §1.5.2).
+ * @note DWARF / DIBuilder lives in `interface/debug_info.ni`.
  * @see docs/design/compiler/nyra-llvm.md §1.5 · m_v0.6_p2 Record
  */
 

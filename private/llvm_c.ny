@@ -67,6 +67,27 @@ part of Llvm;
  */
 @extern("C") func LLVMVerifyModule(M: *mut void, Action: int32, OutMessage: *mut void) -> int32;
 
+// LLVM-C debug metadata entry points (llvm-c/DebugInfo.h).
+@extern("C") func LLVMCreateDIBuilder(M: *mut void) -> *mut void;
+@extern("C") func LLVMDIBuilderFinalize(Builder: *mut void) -> void;
+@extern("C") func LLVMDisposeDIBuilder(Builder: *mut void) -> void;
+@extern("C") func LLVMDIBuilderCreateFile(Builder: *mut void, Filename: *const int8, FilenameLen: uintptr, Directory: *const int8, DirectoryLen: uintptr) -> *mut void;
+@extern("C") func LLVMDIBuilderCreateCompileUnit(Builder: *mut void, Lang: uint32, File: *mut void, Producer: *const int8, ProducerLen: uintptr, IsOptimized: int32, Flags: *const int8, FlagsLen: uintptr, RuntimeVer: uint32, SplitName: *const int8, SplitNameLen: uintptr, Kind: uint32, DWOId: uint32, SplitDebugInlining: int32, DebugInfoForProfiling: int32, SysRoot: *const int8, SysRootLen: uintptr, SDK: *const int8, SDKLen: uintptr) -> *mut void;
+@extern("C") func LLVMDIBuilderCreateSubroutineType(Builder: *mut void, File: *mut void, ParameterTypes: *mut void, NumParameterTypes: uint32, Flags: uint32) -> *mut void;
+@extern("C") func LLVMDIBuilderCreateFunction(Builder: *mut void, Scope: *mut void, Name: *const int8, NameLen: uintptr, LinkageName: *const int8, LinkageNameLen: uintptr, File: *mut void, LineNo: uint32, Ty: *mut void, IsLocalToUnit: int32, IsDefinition: int32, ScopeLine: uint32, Flags: uint32, IsOptimized: int32) -> *mut void;
+@extern("C") func LLVMSetSubprogram(Func: *mut void, SP: *mut void) -> void;
+@extern("C") func LLVMDIBuilderCreateDebugLocation(Ctx: *mut void, Line: uint32, Column: uint32, Scope: *mut void, InlinedAt: *mut void) -> *mut void;
+@extern("C") func LLVMSetCurrentDebugLocation2(Builder: *mut void, Loc: *mut void) -> void;
+@extern("C") func LLVMSetIsNewDbgInfoFormat(M: *mut void, UseNewFormat: int32) -> void;
+@extern("C") func LLVMDIBuilderCreateBasicType(Builder: *mut void, Name: *const int8, NameLen: uintptr, SizeInBits: uint64, Encoding: uint32, Flags: uint32) -> *mut void;
+@extern("C") func LLVMDIBuilderCreateUnspecifiedType(Builder: *mut void, Name: *const int8, NameLen: uintptr) -> *mut void;
+@extern("C") func LLVMDIBuilderCreatePointerType(Builder: *mut void, PointeeTy: *mut void, SizeInBits: uint64, AlignInBits: uint32, AddressSpace: uint32, Name: *const int8, NameLen: uintptr) -> *mut void;
+@extern("C") func LLVMDIBuilderCreateAutoVariable(Builder: *mut void, Scope: *mut void, Name: *const int8, NameLen: uintptr, File: *mut void, LineNo: uint32, Ty: *mut void, AlwaysPreserve: int32, Flags: uint32, AlignInBits: uint32) -> *mut void;
+@extern("C") func LLVMDIBuilderCreateParameterVariable(Builder: *mut void, Scope: *mut void, Name: *const int8, NameLen: uintptr, ArgNo: uint32, File: *mut void, LineNo: uint32, Ty: *mut void, AlwaysPreserve: int32, Flags: uint32) -> *mut void;
+@extern("C") func LLVMDIBuilderCreateExpression(Builder: *mut void, Addr: *mut void, Length: uintptr) -> *mut void;
+@extern("C") func LLVMDIBuilderInsertDeclareRecordAtEnd(Builder: *mut void, Storage: *mut void, VarInfo: *mut void, Expr: *mut void, DebugLoc: *mut void, Block: *mut void) -> *mut void;
+@extern("C") func LLVMGetBasicBlockParent(BB: *mut void) -> *mut void;
+
 /**
  * @brief `LLVMValueRef LLVMAddFunction(LLVMModuleRef M, const char *Name, LLVMTypeRef FunctionTy);`
  */

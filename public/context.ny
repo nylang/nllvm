@@ -11,6 +11,7 @@ part "basic_block.ny";
 part "module.ny";
 part "builder.ny";
 part "target.ny";
+part "debug_info.ny";
 part "../private/llvm_c.ny";
 part "../tests/context_selftest.ny";
 part "../tests/builder_selftest.ny";
@@ -25,6 +26,7 @@ import "interface/basic_block.ni";
 import "interface/module.ni";
 import "interface/builder.ni";
 import "interface/target.ni";
+import "interface/debug_info.ni";
 
 /**
  * @brief Opaque wrapper: `handle` holds `LLVMContextRef` as `*mut void`.

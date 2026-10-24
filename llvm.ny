@@ -12,6 +12,7 @@ export "interface/basic_block.ni";
 export "interface/module.ni";
 export "interface/builder.ni";
 export "interface/target.ni";
+export "interface/debug_info.ni";
 export "public/context.ny";
 
 import "interface/context.ni";
@@ -21,4 +22,5 @@ import "interface/basic_block.ni";
 import "interface/module.ni";
 import "interface/builder.ni";
 import "interface/target.ni";
+import "interface/debug_info.ni";
 import "public/context.ny";

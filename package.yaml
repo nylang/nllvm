@@ -1,6 +1,6 @@
 # LLVM-C support package for the Core backend.
 name: llvm
-version: 0.38.0-own
+version: 0.40.0
 dependencies:
   stdlib:
     path: ../stdlib

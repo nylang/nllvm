@@ -1,6 +1,6 @@
 /**
- * @brief Sole public entry for package `llvm` — LLVM-C wrappers for self-host codegen.
- * @note External importers use `import "llvm:llvm.ny";` only. Import `stdlib:stdlib.ny` only (no source/stdlib/private).
+ * @brief Sole public entry for package `nllvm` — LLVM-C wrappers for self-host codegen.
+ * @note External importers use `import "nllvm:nllvm.ny";` only. Import `stdlib:stdlib.ny` only (no source/stdlib/private).
  * @note ADR 0013 — product `export` is interface + public; `import` private for ObjectUnit link.
  * @see docs/design/compiler/nyra-llvm.md
  */

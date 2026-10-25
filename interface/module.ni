@@ -98,8 +98,8 @@ pub method(Module) EmitObjectEx(
   cpu: string,
   features: string,
   opt_level: int32,
-  {code_model: int32 = 0, inline_ir: bool = false,relocation:int32=0}
+  {code_model: int32 = 0, inline_ir: bool = false,relocation:int32=0,abi:string=""}
 ) -> int32;
 
 /** LLVM's default IR optimization pipeline; 0..3, 10=Os, 11=Oz. */
-pub method(Module) Optimize(triple: string, cpu: string, features: string, level: int32,{pipeline:string="",relocation:int32=0}) -> int32;
+pub method(Module) Optimize(triple: string, cpu: string, features: string, level: int32,{pipeline:string="",relocation:int32=0,abi:string=""}) -> int32;

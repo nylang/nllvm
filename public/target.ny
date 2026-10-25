@@ -87,7 +87,7 @@ pub method(Target) CreateTargetMachineEx(
   cpu: string,
   features: string,
   opt_level: int32,
-  {code_model: int32 = 0,relocation:int32=0}
+  {code_model: int32 = 0,relocation:int32=0,abi:string=""}
 ) -> TargetMachine {
   if relocation<0||relocation>6{return TargetMachine{handle:0 as *mut void};}
   var ctriple: owned <int8>[] = llvm_cstr_buf(triple);
@@ -110,6 +110,20 @@ pub method(Target) CreateTargetMachineEx(
   }
   if cm > 6 {
     cm = 0;
+  }
+  if abi.length > 0 {
+    let options: *mut void = LLVMCreateTargetMachineOptions();
+    if options == (0 as *mut void) { return TargetMachine{handle: 0 as *mut void}; }
+    var cabi: owned <int8>[] = llvm_cstr_buf(abi);
+    LLVMTargetMachineOptionsSetCPU(options, (&mut ccpu[0]) as *const int8);
+    LLVMTargetMachineOptionsSetFeatures(options, (&mut cfeat[0]) as *const int8);
+    LLVMTargetMachineOptionsSetABI(options, (&mut cabi[0]) as *const int8);
+    LLVMTargetMachineOptionsSetCodeGenOptLevel(options, level);
+    LLVMTargetMachineOptionsSetRelocMode(options, relocation);
+    LLVMTargetMachineOptionsSetCodeModel(options, cm);
+    let configured: *mut void = LLVMCreateTargetMachineWithOptions(self.handle, (&mut ctriple[0]) as *const int8, options);
+    LLVMDisposeTargetMachineOptions(options);
+    return TargetMachine{handle: configured};
   }
   let handle: *mut void = LLVMCreateTargetMachine(
     self.handle,

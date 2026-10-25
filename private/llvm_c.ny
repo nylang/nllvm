@@ -385,6 +385,17 @@ part of Llvm;
  */
 @extern("C") func LLVMDisposeTargetMachine(T: *mut void) -> void;
 
+/** Explicit target ABI is required for RISC-V soft/hard-float SDK separation. */
+@extern("C") func LLVMCreateTargetMachineOptions() -> *mut void;
+@extern("C") func LLVMDisposeTargetMachineOptions(options: *mut void);
+@extern("C") func LLVMTargetMachineOptionsSetCPU(options: *mut void, cpu: *const int8);
+@extern("C") func LLVMTargetMachineOptionsSetFeatures(options: *mut void, features: *const int8);
+@extern("C") func LLVMTargetMachineOptionsSetABI(options: *mut void, abi: *const int8);
+@extern("C") func LLVMTargetMachineOptionsSetCodeGenOptLevel(options: *mut void, level: int32);
+@extern("C") func LLVMTargetMachineOptionsSetRelocMode(options: *mut void, relocation: int32);
+@extern("C") func LLVMTargetMachineOptionsSetCodeModel(options: *mut void, model: int32);
+@extern("C") func LLVMCreateTargetMachineWithOptions(target: *mut void, triple: *const int8, options: *mut void) -> *mut void;
+
 /**
  * @brief `LLVMTargetDataRef LLVMCreateTargetDataLayout(LLVMTargetMachineRef T);`
  */

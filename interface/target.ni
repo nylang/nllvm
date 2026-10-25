@@ -55,7 +55,7 @@ pub method(Target) CreateTargetMachineEx(
   cpu: string,
   features: string,
   opt_level: int32,
-  {code_model: int32 = 0,relocation:int32=0}
+  {code_model: int32 = 0,relocation:int32=0,abi:string=""}
 ) -> TargetMachine;
 
 /**

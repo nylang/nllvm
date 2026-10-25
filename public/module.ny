@@ -169,7 +169,7 @@ pub method(Module) EmitObjectEx(
   cpu: string,
   features: string,
   opt_level: int32,
-  {code_model: int32 = 0, inline_ir: bool = false,relocation:int32=0}
+  {code_model: int32 = 0, inline_ir: bool = false,relocation:int32=0,abi:string=""}
 ) -> int32 {
   InitializeAll();
   var triple: string = copy(triple_in);
@@ -184,7 +184,7 @@ pub method(Module) EmitObjectEx(
   if target.handle == (0 as *mut void) {
     return 1;
   }
-  let tm: TargetMachine = target.CreateTargetMachineEx(triple, cpu, features, opt_level, code_model: code_model,relocation:relocation);
+  let tm: TargetMachine = target.CreateTargetMachineEx(triple, cpu, features, opt_level, code_model: code_model,relocation:relocation,abi:abi);
   if tm.handle == (0 as *mut void) {
     return 1;
   }
@@ -227,14 +227,14 @@ method(Module) RunInlinePipeline(tm: TargetMachine) -> int32 {
   return self.Verify();
 }
 
-pub method(Module) Optimize(triple: string, cpu: string, features: string, level: int32,{pipeline:string="",relocation:int32=0}) -> int32 {
+pub method(Module) Optimize(triple: string, cpu: string, features: string, level: int32,{pipeline:string="",relocation:int32=0,abi:string=""}) -> int32 {
   if level==0&&pipeline.length==0{return 0;}
   var suffix: string = "";
   if level == 1 { suffix = "O1"; } else if level == 2 { suffix = "O2"; } else if level == 3 { suffix = "O3"; }
   else if level == 10 { suffix = "Os"; } else if level == 11 { suffix = "Oz"; } else if level==0{suffix="O0";}else{return 1;}
   let target: Target = Target.FromTriple(triple); if target.handle == (0 as *mut void) { return 1; }
   var machine_level: int32 = level; if machine_level > 3 { machine_level = 2; }
-  let machine: TargetMachine = target.CreateTargetMachineEx(triple, cpu, features, machine_level,relocation:relocation); if machine.handle == (0 as *mut void) { return 1; }
+  let machine: TargetMachine = target.CreateTargetMachineEx(triple, cpu, features, machine_level,relocation:relocation,abi:abi); if machine.handle == (0 as *mut void) { return 1; }
   let options: *mut void = LLVMCreatePassBuilderOptions();
   if options == (0 as *mut void) { machine.Dispose(); return 1; }
   // Required exports carry external/weak_odr linkage at module construction.

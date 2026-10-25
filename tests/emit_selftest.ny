@@ -23,7 +23,10 @@ func test_llvm_emit_object_hello_puts() {
   let dir: Directory = dir_opt as Directory;
   let dir_path: string = dir.Path();
   let obj_path: string = Path.Join(dir_path, "hello_puts.o");
-  let exe_path: string = Path.Join(dir_path, "hello_puts");
+  let windows: bool = DefaultTargetTriple().Contains("windows");
+  var exe_name: string = "hello_puts";
+  if windows { exe_name = "hello_puts.exe"; }
+  let exe_path: string = Path.Join(dir_path, exe_name);
 
   let ctx: Context = Context.Create();
   let mod: Module = Module.Create(ctx, "hello_puts");
@@ -83,7 +86,7 @@ func test_llvm_emit_object_hello_puts() {
   let link: ProcessResult = link_result as ProcessResult;
   AssertTrueMsg(link.ExitCode() == 0,link.Stderr());
   if link.ExitCode() != 0 { return; }
-  AssertTrue(File.New(exe_path).Exists());
+  AssertTrueMsg(File.New(exe_path).Exists(),exe_path);
 
   let executed: Result<ProcessResult, ProcessError> = Process.Run(exe_path,ProcessArgs.New(),capture_output:true);
   let process: ProcessResult? = executed.get_if<ProcessResult>();
@@ -91,7 +94,9 @@ func test_llvm_emit_object_hello_puts() {
   if process == nil { return; }
   let run: ProcessResult = process as ProcessResult;
   AssertEqI32(run.ExitCode(),0);
-  AssertEqString(run.Stdout(),"hello\n");
+  var expected_output: string = "hello\n";
+  if windows { expected_output = "hello\r\n"; }
+  AssertEqString(run.Stdout(),expected_output);
 
   bld.Dispose();
   mod.Dispose();

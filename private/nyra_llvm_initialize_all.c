@@ -8,6 +8,7 @@
 #include "llvm-c/Target.h"
 #include "llvm-c/Core.h"
 #include "llvm-c/DebugInfo.h"
+#include "llvm-c/Comdat.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,26 @@ void nyra_llvm_initialize_all(void) {
   LLVMInitializeAllTargetMCs();
   LLVMInitializeAllAsmParsers();
   LLVMInitializeAllAsmPrinters();
+}
+
+static void nyra_core_coff_comdat(LLVMModuleRef module, LLVMValueRef value) {
+  LLVMLinkage linkage = LLVMGetLinkage(value);
+  if (LLVMIsDeclaration(value) ||
+      (linkage != LLVMLinkOnceODRLinkage && linkage != LLVMWeakODRLinkage)) return;
+  size_t length = 0;
+  const char *name = LLVMGetValueName2(value, &length);
+  if (!length) return;
+  LLVMComdatRef group = LLVMGetOrInsertComdat(module, name);
+  LLVMSetComdatSelectionKind(group, LLVMAnyComdatSelectionKind);
+  LLVMSetComdat(value, group);
+}
+
+/* COFF requires explicit section selection for cross-TU ownership/templates. */
+void nyra_core_prepare_coff_comdats(LLVMModuleRef module) {
+  for (LLVMValueRef value = LLVMGetFirstFunction(module); value; value = LLVMGetNextFunction(value))
+    nyra_core_coff_comdat(module, value);
+  for (LLVMValueRef value = LLVMGetFirstGlobal(module); value; value = LLVMGetNextGlobal(value))
+    nyra_core_coff_comdat(module, value);
 }
 
 void nyra_core_add_debug_module_flags(LLVMModuleRef module) {

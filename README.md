@@ -11,3 +11,11 @@ NyraLang.
 See [MIGRATION.md](MIGRATION.md) for source history and the current workspace
 layout. Run the package suite from NyraLang with
 `python3 nyra.py test --package nllvm`. Test data is owned by this repository.
+
+## License
+
+Licensed under the [MIT License](LICENSE).
+
+This license covers the Nyra bindings and helper code in this repository.
+LLVM itself retains its upstream Apache License 2.0 with LLVM Exceptions;
+its license is supplied with the separate LLVM toolchain.

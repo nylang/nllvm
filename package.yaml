@@ -1,6 +1,7 @@
 # LLVM-C support package for the Core backend.
 name: nllvm
 version: 0.40.0
+license: MIT
 dependencies:
   stdlib:
     path: ../../source/stdlib

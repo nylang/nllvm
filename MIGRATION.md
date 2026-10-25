@@ -6,5 +6,7 @@ at `0f37de844af1a4f5eaaa0da6e577b493fb565e4e` before the independent-package mig
 
 The source manifest currently targets a NyraLang workspace checkout at
 `third_party/nllvm`, with SDK source dependencies under `../../source/`.
-This is a local development arrangement until public repository and dependency
-locations are assigned. Package versions are preserved during extraction.
+The public repository is <https://github.com/nylang/nllvm>. The relative dependency
+paths remain a workspace development arrangement. Package versions are preserved
+during extraction. The LLVM toolchain is distributed separately from these
+bindings.

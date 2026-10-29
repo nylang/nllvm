@@ -1,3 +1,6 @@
+// Copyright (c) 2026 tangxiangjiang
+// SPDX-License-Identifier: MIT
+
 /**
  * @brief Small LLVM-C helpers that require target macros or typed metadata APIs.
  * @note LLVMInitializeAllTargetInfos/Targets/TargetMCs/AsmParsers/AsmPrinters
@@ -69,7 +72,7 @@ typedef struct NyraCoreDebugComposite {
   struct NyraCoreDebugComposite *next;
 } NyraCoreDebugComposite;
 
-static NyraCoreDebugComposite *nyra_core_debug_composites;
+/* Pending composites are owned by one emitter, never process-global. */
 
 LLVMMetadataRef nyra_core_debug_basic_type(LLVMDIBuilderRef builder,
                                             const char *name, size_t name_len,
@@ -114,7 +117,8 @@ LLVMMetadataRef nyra_core_debug_composite_begin(LLVMDIBuilderRef builder,
                                                  LLVMMetadataRef file,
                                                  const char *name, size_t name_len,
                                                  unsigned line, uint64_t size_bits,
-                                                 uint32_t align_bits, unsigned is_union) {
+                                                 uint32_t align_bits, unsigned is_union, void **pending) {
+  if (!pending) return NULL;
   NyraCoreDebugComposite *entry = calloc(1, sizeof(*entry));
   if (!entry) return NULL;
   entry->name = malloc(name_len + 1);
@@ -133,8 +137,8 @@ LLVMMetadataRef nyra_core_debug_composite_begin(LLVMDIBuilderRef builder,
       builder, tag, entry->name, entry->name_len, scope, file, line, 0,
       size_bits, align_bits, LLVMDIFlagZero, entry->name, entry->name_len);
   if (!entry->temporary) { free(entry->name); free(entry); return NULL; }
-  entry->next = nyra_core_debug_composites;
-  nyra_core_debug_composites = entry;
+  entry->next = (NyraCoreDebugComposite *)*pending;
+  *pending = entry;
   return entry->temporary;
 }
 
@@ -144,8 +148,9 @@ unsigned nyra_core_debug_composite_member(LLVMDIBuilderRef builder,
                                            const char *name, size_t name_len,
                                            unsigned line, uint64_t size_bits,
                                            uint32_t align_bits, uint64_t offset_bits,
-                                           LLVMMetadataRef type) {
-  NyraCoreDebugComposite *entry = nyra_core_debug_composites;
+                                           LLVMMetadataRef type, void **pending) {
+  if (!pending) return 0;
+  NyraCoreDebugComposite *entry = (NyraCoreDebugComposite *)*pending;
   while (entry && entry->temporary != temporary) entry = entry->next;
   if (!entry || !type) return 0;
   LLVMMetadataRef member = LLVMDIBuilderCreateMemberType(
@@ -164,8 +169,10 @@ unsigned nyra_core_debug_composite_member(LLVMDIBuilderRef builder,
 }
 
 LLVMMetadataRef nyra_core_debug_composite_end(LLVMDIBuilderRef builder,
-                                               LLVMMetadataRef temporary) {
-  NyraCoreDebugComposite **link = &nyra_core_debug_composites;
+                                               LLVMMetadataRef temporary, void **pending) {
+  if (!pending) return NULL;
+  NyraCoreDebugComposite *head = (NyraCoreDebugComposite *)*pending;
+  NyraCoreDebugComposite **link = &head;
   while (*link && (*link)->temporary != temporary) link = &(*link)->next;
   if (!*link) return NULL;
   NyraCoreDebugComposite *entry = *link;
@@ -183,16 +190,18 @@ LLVMMetadataRef nyra_core_debug_composite_end(LLVMDIBuilderRef builder,
   }
   if (complete) LLVMMetadataReplaceAllUsesWith(temporary, complete);
   *link = entry->next;
+  *pending = head;
   free(entry->elements);
   free(entry->name);
   free(entry);
   return complete;
 }
 
-void nyra_core_debug_composite_discard_pending(void) {
-  while (nyra_core_debug_composites) {
-    NyraCoreDebugComposite *entry = nyra_core_debug_composites;
-    nyra_core_debug_composites = entry->next;
+void nyra_core_debug_composite_discard_pending(void **pending) {
+  if (!pending) return;
+  while (*pending) {
+    NyraCoreDebugComposite *entry = (NyraCoreDebugComposite *)*pending;
+    *pending = entry->next;
     free(entry->elements);
     free(entry->name);
     free(entry);

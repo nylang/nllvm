@@ -67,3 +67,7 @@ Licensed under the [MIT License](LICENSE).
 This license covers the Nyra bindings and helper code in this repository.
 LLVM itself retains its upstream Apache License 2.0 with LLVM Exceptions;
 its license is supplied with the separate LLVM toolchain.
+
+## Module architecture
+
+See [module responsibilities, ownership and dependency boundaries](ARCHITECTURE.md).

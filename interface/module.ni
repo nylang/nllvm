@@ -1,9 +1,12 @@
+// Copyright (c) 2026 tangxiangjiang
+// SPDX-License-Identifier: MIT
+
 /**
- * @brief Product face for LLVM `LLVMModuleRef` — Create / Dispose / Verify / AddFunction / EmitObject.
+ * @brief Product face for LLVM `LLVMModuleRef` — Create / Dispose / Verify / AddFunction /
+ *   EmitObject.
  * @note Handle is opaque; never `nyra_free`. Pair every Create with Dispose.
  * @see docs/design/compiler/nyra-llvm.md §1.5 · m_v0.6_p2 Record
  */
-
 import "stdlib:stdlib.ny";
 import "interface/context.ni";
 import "interface/type.ni";
@@ -18,6 +21,7 @@ pub struct Module;
  * @brief Create a module in `ctx` (`LLVMModuleCreateWithNameInContext`).
  * @param ctx Owning context.
  * @param name Module id (NUL-terminated C string crossing).
+ * @returns Module handle owned by the caller; dispose it before its context is destroyed.
  */
 pub static method(Module) Create(ctx: Context, name: string) -> Module;
 
@@ -26,7 +30,7 @@ pub static method(Module) Create(ctx: Context, name: string) -> Module;
  */
 pub method(Module) Dispose() -> void;
 
-/** Add one metadata node to a named module registry. */
+/** @brief Add one metadata node to a named module registry. */
 pub method(Module) AddNamedMetadataOperand(name: string, value: Value) -> void;
 
 /**
@@ -36,6 +40,7 @@ pub method(Module) SetTarget(triple: string) -> void;
 
 /**
  * @brief Read target triple (`LLVMGetTarget`); empty if unset.
+ * @returns Target triple (`LLVMGetTarget`); empty if unset.
  */
 pub method(Module) TargetTriple() -> string;
 
@@ -66,16 +71,19 @@ pub method(Module) AddFunction(name: string, fn_ty: Type) -> Value;
 
 /**
  * @brief Lookup by name (`LLVMGetNamedFunction`); null handle if missing.
+ * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Module) NamedFunction(name: string) -> Value;
 
 /**
  * @brief Lookup global by name (`LLVMGetNamedGlobal`); null handle if missing.
+ * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Module) NamedGlobal(name: string) -> Value;
 
 /**
  * @brief Add a global variable (`LLVMAddGlobal`).
+ * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Module) AddGlobal(ty: Type, name: string) -> Value;
 
@@ -98,8 +106,17 @@ pub method(Module) EmitObjectEx(
   cpu: string,
   features: string,
   opt_level: int32,
-  {code_model: int32 = 0, inline_ir: bool = false,relocation:int32=0,abi:string=""}
+  {code_model: int32 = 0, inline_ir: bool = false, relocation: int32 = 0, abi: string = ""}
 ) -> int32;
 
-/** LLVM's default IR optimization pipeline; 0..3, 10=Os, 11=Oz. */
-pub method(Module) Optimize(triple: string, cpu: string, features: string, level: int32,{pipeline:string="",relocation:int32=0,abi:string=""}) -> int32;
+/**
+ * @brief LLVM's default IR optimization pipeline; 0..3, 10=Os, 11=Oz.
+ * @returns Zero on success; a nonzero status on failure.
+ */
+pub method(Module) Optimize(
+  triple: string,
+  cpu: string,
+  features: string,
+  level: int32,
+  {pipeline: string = "", relocation: int32 = 0, abi: string = ""}
+) -> int32;

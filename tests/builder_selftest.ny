@@ -1,10 +1,13 @@
+// Copyright (c) 2026 tangxiangjiang
+// SPDX-License-Identifier: MIT
+
+part of LlvmTests;
+
 /**
  * @brief IRBuilder / Module.Verify smokes: i32 add(i32,i32) OK + missing terminator fail.
  * @note Dispose Context / Module / Builder; values/BBs die with the module.
  * @see m_v0.7_p6 · m_v0.6_p2 Record
  */
-
-part of Llvm;
 
 /**
  * @brief Build `i32 add(i32, i32)` with alloca/load/store/add/ret; Verify succeeds.

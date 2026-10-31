@@ -29,13 +29,13 @@ pub struct TargetData;
 /**
  * @brief Initialize all LLVM targets / asm printers (`nyra_llvm_initialize_all` shim).
  */
-pub func InitializeAll() -> void;
+pub static method(Target) InitializeAll() -> void;
 
 /**
  * @brief Host default triple (`LLVMGetDefaultTargetTriple`); copies then disposes C buffer.
  * @returns Host default triple (`LLVMGetDefaultTargetTriple`); copies then disposes C buffer.
  */
-pub func DefaultTargetTriple() -> string;
+pub static method(Target) DefaultTriple() -> string;
 
 /**
  * @brief Look up a target (`LLVMGetTargetFromTriple`). Null handle on failure.

@@ -5,7 +5,6 @@ module LlvmTarget;
 import "stdlib:stdlib.ny";
 import "public/handles.ny";
 import "private/llvm_c.ni";
-import "private/c_string.ny";
 import "interface/target.ni";
 
 /**
@@ -16,7 +15,7 @@ import "interface/target.ni";
 /**
  * @brief Call `nyra_llvm_initialize_all` (five LLVMInitializeAll* macros).
  */
-pub func InitializeAll() -> void {
+pub static method(Target) InitializeAll() -> void {
   nyra_llvm_initialize_all();
 }
 
@@ -24,9 +23,9 @@ pub func InitializeAll() -> void {
  * @brief Host default triple (`LLVMGetDefaultTargetTriple`); copies then disposes C buffer.
  * @returns Host default triple (`LLVMGetDefaultTargetTriple`); copies then disposes C buffer.
  */
-pub func DefaultTargetTriple() -> string {
+pub static method(Target) DefaultTriple() -> string {
   let c: *mut int8 = LLVMGetDefaultTargetTriple();
-  if c == (0 as *mut int8) {
+  if c == nil {
     return "";
   }
 
@@ -42,13 +41,13 @@ pub func DefaultTargetTriple() -> string {
  * @returns Registry-owned target handle, or a null handle if lookup fails.
  */
 pub static method(Target) FromTriple(triple: string) -> Target {
-  var t_slot: intptr = 0 as intptr;
-  var err_slot: intptr = 0 as intptr;
+  var t_slot: intptr = 0;
+  var err_slot: intptr = 0;
   let t_ptr: *mut void = (&mut t_slot) as *mut void;
   let err_ptr: *mut void = (&mut err_slot) as *mut void;
-  var ctriple: owned <int8>[] = LlvmCStringBuffer(triple);
+  var ctriple: owned <int8>[] = triple.ToCStringBytes();
   let status: int32 = LLVMGetTargetFromTriple((&mut ctriple[0]) as *const int8, t_ptr, err_ptr);
-  if err_slot != (0 as intptr) {
+  if err_slot != (0ip) {
     LLVMDisposeMessage(err_slot as *mut int8);
   }
 
@@ -85,14 +84,14 @@ pub method(Target) CreateTargetMachineEx(
     return TargetMachine{handle: 0 as *mut void};
   }
 
-  var ctriple: owned <int8>[] = LlvmCStringBuffer(triple);
+  var ctriple: owned <int8>[] = triple.ToCStringBytes();
   var cpu_s: string = copy(cpu);
   if cpu_s.length <= 0 {
     cpu_s = copy("generic");
   }
 
-  var ccpu: owned <int8>[] = LlvmCStringBuffer(cpu_s);
-  var cfeat: owned <int8>[] = LlvmCStringBuffer(features);
+  var ccpu: owned <int8>[] = cpu_s.ToCStringBytes();
+  var cfeat: owned <int8>[] = features.ToCStringBytes();
   var level: int32 = opt_level;
   if level < 0 {
     level = 0;
@@ -113,11 +112,11 @@ pub method(Target) CreateTargetMachineEx(
 
   if abi.length > 0 {
     let options: *mut void = LLVMCreateTargetMachineOptions();
-    if options == (0 as *mut void) {
+    if options == nil {
       return TargetMachine{handle: 0 as *mut void};
     }
 
-    var cabi: owned <int8>[] = LlvmCStringBuffer(abi);
+    var cabi: owned <int8>[] = abi.ToCStringBytes();
     LLVMTargetMachineOptionsSetCPU(options,(&mut ccpu[0]) as *const int8);
     LLVMTargetMachineOptionsSetFeatures(options,(&mut cfeat[0]) as *const int8);
     LLVMTargetMachineOptionsSetABI(options,(&mut cabi[0]) as *const int8);
@@ -169,9 +168,9 @@ pub method(TargetMachine) CreateTargetData() -> TargetData {
  * @returns 0 on success.
  */
 pub method(TargetMachine) EmitToFile(mod: Module, path: string) -> int32 {
-  var err_slot: intptr = 0 as intptr;
+  var err_slot: intptr = 0;
   let err_ptr: *mut void = (&mut err_slot) as *mut void;
-  var cpath: owned <int8>[] = LlvmCStringBuffer(path);
+  var cpath: owned <int8>[] = path.ToCStringBytes();
   let fail: int32 = LLVMTargetMachineEmitToFile(
     self.handle,
     mod.handle,
@@ -179,7 +178,7 @@ pub method(TargetMachine) EmitToFile(mod: Module, path: string) -> int32 {
     1,
     err_ptr
   );
-  if err_slot != (0 as intptr) {
+  if err_slot != (0ip) {
     LLVMDisposeMessage(err_slot as *mut int8);
   }
 
@@ -199,7 +198,7 @@ pub method(TargetData) Dispose() -> void {
  */
 pub method(TargetData) LayoutString() -> string {
   let c: *mut int8 = LLVMCopyStringRepOfTargetData(self.handle);
-  if c == (0 as *mut int8) {
+  if c == nil {
     return "";
   }
 

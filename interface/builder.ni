@@ -474,127 +474,127 @@ pub method(Builder) BuildAtomicCmpXchg(
 ) -> Value;
 
 /** @brief `LLVMAtomicRMWBinOp` (Core.h). */
-pub static kAtomicRmwXchg: int32 = 0;
+pub constexpr kAtomicRmwXchg: int32 = 0;
 
 /**
  * @brief LLVM atomic read-modify-write opcode for addition.
  */
-pub static kAtomicRmwAdd: int32 = 1;
+pub constexpr kAtomicRmwAdd: int32 = 1;
 
 /**
  * @brief LLVM atomic read-modify-write opcode for subtraction.
  */
-pub static kAtomicRmwSub: int32 = 2;
+pub constexpr kAtomicRmwSub: int32 = 2;
 
 /**
  * @brief LLVM atomic read-modify-write opcode for bitwise conjunction.
  */
-pub static kAtomicRmwAnd: int32 = 3;
+pub constexpr kAtomicRmwAnd: int32 = 3;
 
 /**
  * @brief LLVM atomic read-modify-write opcode for bitwise disjunction.
  */
-pub static kAtomicRmwOr: int32 = 5;
+pub constexpr kAtomicRmwOr: int32 = 5;
 
 /**
  * @brief LLVM atomic read-modify-write opcode for bitwise exclusive-or.
  */
-pub static kAtomicRmwXor: int32 = 6;
+pub constexpr kAtomicRmwXor: int32 = 6;
 
 /** @brief `LLVMAtomicOrderingSequentiallyConsistent`. */
-pub static kAtomicOrderingSeqCst: int32 = 7;
+pub constexpr kAtomicOrderingSeqCst: int32 = 7;
 
 /** @brief `LLVMAtomicOrderingAcquire`. */
-pub static kAtomicOrderingAcquire: int32 = 4;
+pub constexpr kAtomicOrderingAcquire: int32 = 4;
 
 /** @brief `LLVMAtomicOrderingRelease`. */
-pub static kAtomicOrderingRelease: int32 = 5;
+pub constexpr kAtomicOrderingRelease: int32 = 5;
 
 /** @brief `LLVMAtomicOrderingAcquireRelease`. */
-pub static kAtomicOrderingAcqRel: int32 = 6;
+pub constexpr kAtomicOrderingAcqRel: int32 = 6;
 
 /** @brief `LLVMAtomicOrderingMonotonic` (Relaxed). */
-pub static kAtomicOrderingMonotonic: int32 = 2;
+pub constexpr kAtomicOrderingMonotonic: int32 = 2;
 
 /**
  * @brief LLVM integer predicate: equal.
  */
-pub static kICmpEQ: int32 = 32;
+pub constexpr kICmpEQ: int32 = 32;
 
 /**
  * @brief LLVM integer predicate: not equal.
  */
-pub static kICmpNE: int32 = 33;
+pub constexpr kICmpNE: int32 = 33;
 
 /**
  * @brief LLVM integer predicate: unsigned greater than.
  */
-pub static kICmpUGT: int32 = 34;
+pub constexpr kICmpUGT: int32 = 34;
 
 /**
  * @brief LLVM integer predicate: unsigned greater than or equal.
  */
-pub static kICmpUGE: int32 = 35;
+pub constexpr kICmpUGE: int32 = 35;
 
 /**
  * @brief LLVM integer predicate: unsigned less than.
  */
-pub static kICmpULT: int32 = 36;
+pub constexpr kICmpULT: int32 = 36;
 
 /**
  * @brief LLVM integer predicate: unsigned less than or equal.
  */
-pub static kICmpULE: int32 = 37;
+pub constexpr kICmpULE: int32 = 37;
 
 /**
  * @brief LLVM integer predicate: signed greater than.
  */
-pub static kICmpSGT: int32 = 38;
+pub constexpr kICmpSGT: int32 = 38;
 
 /**
  * @brief LLVM integer predicate: signed greater than or equal.
  */
-pub static kICmpSGE: int32 = 39;
+pub constexpr kICmpSGE: int32 = 39;
 
 /**
  * @brief LLVM integer predicate: signed less than.
  */
-pub static kICmpSLT: int32 = 40;
+pub constexpr kICmpSLT: int32 = 40;
 
 /**
  * @brief LLVM integer predicate: signed less than or equal.
  */
-pub static kICmpSLE: int32 = 41;
+pub constexpr kICmpSLE: int32 = 41;
 
 /**
  * @brief LLVM floating-point predicate: ordered equal.
  */
-pub static kFCmpOEQ: int32 = 1;
+pub constexpr kFCmpOEQ: int32 = 1;
 
 /**
  * @brief LLVM floating-point predicate: ordered greater than.
  */
-pub static kFCmpOGT: int32 = 2;
+pub constexpr kFCmpOGT: int32 = 2;
 
 /**
  * @brief LLVM floating-point predicate: ordered greater than or equal.
  */
-pub static kFCmpOGE: int32 = 3;
+pub constexpr kFCmpOGE: int32 = 3;
 
 /**
  * @brief LLVM floating-point predicate: ordered less than.
  */
-pub static kFCmpOLT: int32 = 4;
+pub constexpr kFCmpOLT: int32 = 4;
 
 /**
  * @brief LLVM floating-point predicate: ordered less than or equal.
  */
-pub static kFCmpOLE: int32 = 5;
+pub constexpr kFCmpOLE: int32 = 5;
 
 /**
  * @brief LLVM floating-point predicate: ordered not equal.
  */
-pub static kFCmpONE: int32 = 6;
+pub constexpr kFCmpONE: int32 = 6;
 
 /** @brief LLVM real unordered-or-not-equal predicate (`LLVMRealUNE`). */
-pub static kFCmpUNE: int32 = 14;
+pub constexpr kFCmpUNE: int32 = 14;

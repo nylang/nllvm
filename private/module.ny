@@ -5,7 +5,6 @@ module LlvmModule;
 import "stdlib:stdlib.ny";
 import "public/handles.ny";
 import "private/llvm_c.ni";
-import "private/c_string.ny";
 import "interface/module.ni";
 import "interface/target.ni";
 
@@ -21,7 +20,7 @@ import "interface/target.ni";
  * @returns Module handle owned by the caller; dispose it before its context is destroyed.
  */
 pub static method(Module) Create(ctx: Context, name: string) -> Module {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMModuleCreateWithNameInContext((&mut cname[0]) as *const int8, ctx.handle);
 
   return Module{handle: handle};
@@ -36,7 +35,7 @@ pub method(Module) Dispose() -> void {
 
 /** @brief Add one metadata node to a named module registry. */
 pub method(Module) AddNamedMetadataOperand(name: string, value: Value) -> void {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   LLVMAddNamedMetadataOperand(self.handle,(&mut cname[0]) as *const int8, value.handle);
 }
 
@@ -44,7 +43,7 @@ pub method(Module) AddNamedMetadataOperand(name: string, value: Value) -> void {
  * @brief `LLVMSetTarget`.
  */
 pub method(Module) SetTarget(triple: string) -> void {
-  var ctriple: owned <int8>[] = LlvmCStringBuffer(triple);
+  var ctriple: owned <int8>[] = triple.ToCStringBytes();
   LLVMSetTarget(self.handle,(&mut ctriple[0]) as *const int8);
 }
 
@@ -54,7 +53,7 @@ pub method(Module) SetTarget(triple: string) -> void {
  */
 pub method(Module) TargetTriple() -> string {
   let c: *const int8 = LLVMGetTarget(self.handle);
-  if c == (0 as *const int8) {
+  if c == nil {
     return "";
   }
 
@@ -70,7 +69,7 @@ pub method(Module) TargetTriple() -> string {
  * @brief `LLVMSetDataLayout`.
  */
 pub method(Module) SetDataLayout(layout: string) -> void {
-  var clayout: owned <int8>[] = LlvmCStringBuffer(layout);
+  var clayout: owned <int8>[] = layout.ToCStringBytes();
   LLVMSetDataLayout(self.handle,(&mut clayout[0]) as *const int8);
 }
 
@@ -79,11 +78,11 @@ pub method(Module) SetDataLayout(layout: string) -> void {
  * @returns 0 = ok; nonzero = broken.
  */
 pub method(Module) WriteIR(path: string) -> int32 {
-  var out_msg_slot: intptr = 0 as intptr;
+  var out_msg_slot: intptr = 0;
   let out_msg_ptr: *mut void = (&mut out_msg_slot) as *mut void;
-  var cpath: owned <int8>[] = LlvmCStringBuffer(path);
+  var cpath: owned <int8>[] = path.ToCStringBytes();
   let st: int32 = LLVMPrintModuleToFile(self.handle,(&mut cpath[0]) as *const int8, out_msg_ptr);
-  if out_msg_slot != (0 as intptr) {
+  if out_msg_slot != (0ip) {
     LLVMDisposeMessage(out_msg_slot as *mut int8);
   }
 
@@ -111,7 +110,7 @@ pub method(Module) Verify() -> int32 {
  * @returns Function `Value`.
  */
 pub method(Module) AddFunction(name: string, fn_ty: Type) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMAddFunction(self.handle,(&mut cname[0]) as *const int8, fn_ty.handle);
 
   return Value{handle: handle};
@@ -122,7 +121,7 @@ pub method(Module) AddFunction(name: string, fn_ty: Type) -> Value {
  * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Module) NamedFunction(name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMGetNamedFunction(self.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -133,7 +132,7 @@ pub method(Module) NamedFunction(name: string) -> Value {
  * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Module) NamedGlobal(name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMGetNamedGlobal(self.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -144,7 +143,7 @@ pub method(Module) NamedGlobal(name: string) -> Value {
  * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Module) AddGlobal(ty: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMAddGlobal(self.handle, ty.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -157,7 +156,7 @@ pub method(Module) AddGlobal(ty: Type, name: string) -> Value {
 pub method(Module) EmitObject(path: string) -> int32 {
   var triple: string = self.TargetTriple();
   if triple.length == 0 {
-    triple = DefaultTargetTriple();
+    triple = Target.DefaultTriple();
   }
 
   return self.EmitObjectEx(path, triple, "generic", "", 2);
@@ -176,10 +175,10 @@ pub method(Module) EmitObjectEx(
   opt_level: int32,
   {code_model: int32 = 0, inline_ir: bool = false, relocation: int32 = 0, abi: string = ""}
 ) -> int32 {
-  InitializeAll();
+  Target.InitializeAll();
   var triple: string = copy(triple_in);
   if triple.length == 0 {
-    triple = DefaultTargetTriple();
+    triple = Target.DefaultTriple();
   }
 
   if triple.length == 0 {
@@ -188,7 +187,7 @@ pub method(Module) EmitObjectEx(
 
   self.SetTarget(triple);
   let target: Target = Target.FromTriple(triple);
-  if target.handle == (0 as *mut void) {
+  if target.handle == nil {
     return 1;
   }
 
@@ -201,12 +200,12 @@ pub method(Module) EmitObjectEx(
     relocation: relocation,
     abi: abi
   );
-  if tm.handle == (0 as *mut void) {
+  if tm.handle == nil {
     return 1;
   }
 
   let td: TargetData = tm.CreateTargetData();
-  if td.handle == (0 as *mut void) {
+  if td.handle == nil {
     tm.Dispose();
 
     return 1;
@@ -234,12 +233,12 @@ pub method(Module) EmitObjectEx(
 method(Module) RunInlinePipeline(tm: TargetMachine) -> int32 {
   let options: *mut void = LLVMCreatePassBuilderOptions();
   let pipeline: string = "cgscc(inline)";
-  var cpasses: owned <int8>[] = LlvmCStringBuffer(pipeline);
+  var cpasses: owned <int8>[] = pipeline.ToCStringBytes();
   let err: *mut void = LLVMRunPasses(self.handle,(&mut cpasses[0]) as *const int8, tm.handle, options);
   LLVMDisposePassBuilderOptions(options);
-  if err != (0 as *mut void) {
+  if err != nil {
     let message: *mut int8 = LLVMGetErrorMessage(err);
-    if message != (0 as *mut int8) {
+    if message != nil {
       let length: int32 = string.StrLen(message as *const uint8) as int32;
       Console.Eprintln("[llvm] inline pipeline: ".Concat(string.ViewFrom(message as *const int8, length)));
       LLVMDisposeErrorMessage(message);
@@ -284,7 +283,7 @@ pub method(Module) Optimize(
   }
 
   let target: Target = Target.FromTriple(triple);
-  if target.handle == (0 as *mut void) {
+  if target.handle == nil {
     return 1;
   }
 
@@ -301,12 +300,12 @@ pub method(Module) Optimize(
     relocation: relocation,
     abi: abi
   );
-  if machine.handle == (0 as *mut void) {
+  if machine.handle == nil {
     return 1;
   }
 
   let options: *mut void = LLVMCreatePassBuilderOptions();
-  if options == (0 as *mut void) {
+  if options == nil {
     machine.Dispose();
 
     return 1;
@@ -319,13 +318,13 @@ pub method(Module) Optimize(
     selected = "default<".Concat(suffix).Concat(">");
   }
 
-  var passes: owned <int8>[] = LlvmCStringBuffer(selected);
+  var passes: owned <int8>[] = selected.ToCStringBytes();
   let error: *mut void = LLVMRunPasses(self.handle,(&mut passes[0]) as *const int8, machine.handle, options);
   LLVMDisposePassBuilderOptions(options);
   machine.Dispose();
-  if error != (0 as *mut void) {
+  if error != nil {
     let message: *mut int8 = LLVMGetErrorMessage(error);
-    if message != (0 as *mut int8) {
+    if message != nil {
       let length: int32 = string.StrLen(message as *const uint8) as int32;
       Console.Eprintln("[llvm] optimization: ".Concat(string.ViewFrom(message as *const int8, length)));
       LLVMDisposeErrorMessage(message);

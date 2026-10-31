@@ -1,5 +1,8 @@
 # nllvm
 
+Development API 0.41.0 requires a matching Nyra SDK 1.0.5 or newer.
+Rebuild precompiled consumers against the matching interfaces and runtime.
+
 Nyra bindings for the LLVM C API. This package is independently versioned;
 it does not contain the upstream LLVM toolchain.
 
@@ -71,3 +74,28 @@ its license is supplied with the separate LLVM toolchain.
 ## Module architecture
 
 See [module responsibilities, ownership and dependency boundaries](ARCHITECTURE.md).
+
+## Coding-rule lint
+
+`package.yaml` selects the portable `lint.yaml` profile. It requires the
+1.0.5 P7 analyzer candidate (or a later SDK containing those rules); the
+published 1.0.4 analyzer does not implement them. `import: default` inherits
+the selected workspace profile when present, otherwise analyzer SDK defaults.
+No sibling source path is required. Run `nyra-analyzer lint . --json`. Existing
+violations remain migration debt; lint success is not runtime qualification.
+
+## 1.0.5 source API migration
+
+Use `Target.InitializeAll()` / `Target.DefaultTriple()` and retain a
+`DebugInfo.New(...)` value for its instance operations. Finalize before Dispose;
+keep the context/module alive and do not copy a live debug owner. Build all
+consumers with matching 1.0.5 stdlib source for `string.ToCStringBytes`.
+The old free-function and untyped debug-handle APIs are removed. See
+[ownership and module contracts](ARCHITECTURE.md). No tag or release is implied.
+
+The low-level provider API now uses a concrete `DwarfBuilder` for recursive debug
+metadata, plus Context/Module/Value/Builder operations. The former empty
+`LlvmNative` namespace is removed. DwarfBuilder owns pending bookkeeping; keep
+Finalize/Dispose ordered before module/context disposal and do not copy a live
+builder. Its move operation transfers the sole pending owner. See ARCHITECTURE
+for focused source evidence and the unchanged C provider boundary.

@@ -5,7 +5,6 @@ module LlvmContext;
 import "stdlib:stdlib.ny";
 import "public/handles.ny";
 import "private/llvm_c.ni";
-import "private/c_string.ny";
 import "interface/context.ni";
 
 /**
@@ -40,7 +39,7 @@ pub method(Context) Dispose() -> void {
  * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Context) MetadataString(value: string) -> Value {
-  var cvalue: owned <int8>[] = LlvmCStringBuffer(value);
+  var cvalue: owned <int8>[] = value.ToCStringBytes();
   let handle: *mut void = LLVMMDStringInContext(
     self.handle,
     (&mut cvalue[0]) as *const int8,
@@ -69,7 +68,7 @@ pub method(Context) ProfileSiteMetadata(
   values[3] = line.handle;
   values[4] = dimensions.handle;
   values[5] = tag.handle;
-  let handle: *mut void = LLVMMDNodeInContext(self.handle,(&mut values[0]) as *mut void, 6 as uint32);
+  let handle: *mut void = LLVMMDNodeInContext(self.handle,(&mut values[0]) as *mut void, 6u32);
 
   return Value{handle: handle};
 }
@@ -95,7 +94,7 @@ pub method(Context) ProfileRcSiteMetadata(
   values[4] = operation.handle;
   values[5] = path.handle;
   values[6] = line.handle;
-  let handle: *mut void = LLVMMDNodeInContext(self.handle,(&mut values[0]) as *mut void, 7 as uint32);
+  let handle: *mut void = LLVMMDNodeInContext(self.handle,(&mut values[0]) as *mut void, 7u32);
 
   return Value{handle: handle};
 }
@@ -108,7 +107,7 @@ pub method(Context) ProfileRcTypeMetadata(type_id: Value, type_name: Value) -> V
   var values: owned <*mut void>[] = new <*mut void>[2];
   values[0] = type_id.handle;
   values[1] = type_name.handle;
-  let handle: *mut void = LLVMMDNodeInContext(self.handle,(&mut values[0]) as *mut void, 2 as uint32);
+  let handle: *mut void = LLVMMDNodeInContext(self.handle,(&mut values[0]) as *mut void, 2u32);
 
   return Value{handle: handle};
 }
@@ -213,7 +212,7 @@ pub method(Context) StructType(fields: *mut Array<Type>, packed: int32) -> Type 
   unsafe {
     let n: int32 = (*fields).len;
     if n <= 0 {
-      let handle: *mut void = LLVMStructTypeInContext(self.handle, 0 as *mut void, 0 as uint32, packed);
+      let handle: *mut void = LLVMStructTypeInContext(self.handle, 0 as *mut void, 0u32, packed);
 
       return Type{handle: handle};
     }
@@ -239,7 +238,7 @@ pub method(Context) StructType(fields: *mut Array<Type>, packed: int32) -> Type 
  * @returns LLVM type handle whose storage remains owned by its context.
  */
 pub method(Context) StructCreateNamed(name: string) -> Type {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMStructCreateNamed(self.handle,(&mut cname[0]) as *const int8);
 
   return Type{handle: handle};
@@ -252,7 +251,7 @@ pub method(Context) StructCreateNamed(name: string) -> Type {
  * @returns Borrowed LLVM basic-block handle; its enclosing module owns the foreign storage.
  */
 pub method(Context) AppendBasicBlock(fn: Value, name: string) -> BasicBlock {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMAppendBasicBlockInContext(
     self.handle,
     fn.handle,
@@ -289,7 +288,7 @@ pub method(Context) ConstStruct(elems: *mut Array<Value>, packed: int32) -> Valu
   unsafe {
     let n: int32 = (*elems).len;
     if n <= 0 {
-      return Value{handle: LLVMConstStructInContext(self.handle, 0 as *mut void, 0 as uint32, packed)};
+      return Value{handle: LLVMConstStructInContext(self.handle, 0 as *mut void, 0u32, packed)};
     }
 
     var refs: owned <*mut void>[] = new <*mut void>[n];

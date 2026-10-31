@@ -1,6 +1,6 @@
 # LLVM-C support package for the Core backend.
 name: nllvm
-version: 0.40.0
+version: 0.41.0
 license: MIT
 directories:
   interface:
@@ -10,3 +10,4 @@ directories:
   private:
     - tests
     - private
+analysis-options: lint.yaml

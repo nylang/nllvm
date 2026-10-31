@@ -12,7 +12,7 @@ part of LlvmTests;
  */
 
 /** @brief LLVMPrivateLinkage enum value (`LLVMLinkage` in Core.h). */
-static kLlvmPrivateLinkage: int32 = 9;
+constexpr kLlvmPrivateLinkage: int32 = 9;
 
 /**
  * @brief Build hello_puts-equivalent IR, EmitObject, host-clang link, run; exit 0 + stdout
@@ -28,7 +28,7 @@ func test_llvm_emit_object_hello_puts() {
   let dir: Directory = dir_opt as Directory;
   let dir_path: string = dir.Path();
   let obj_path: string = Path.Join(dir_path, "hello_puts.o");
-  let windows: bool = DefaultTargetTriple().Contains("windows");
+  let windows: bool = Target.DefaultTriple().Contains("windows");
   var exe_name: string = "hello_puts";
   if windows {
     exe_name = "hello_puts.exe";
@@ -89,7 +89,7 @@ func test_llvm_emit_object_hello_puts() {
   link_args.Push(exe_path);
   link_args.Push(obj_path);
   // EmitObject uses LLVM's default relocation. Match static x86 Linux output.
-  if DefaultTargetTriple().Contains("-linux") {
+  if Target.DefaultTriple().Contains("-linux") {
     link_args.Push("-no-pie");
   }
 

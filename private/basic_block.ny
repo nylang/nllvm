@@ -17,5 +17,5 @@ import "interface/basic_block.ni";
  * @returns Whether this block already ends in a terminator instruction.
  */
 pub method(BasicBlock) HasTerminator() -> bool {
-  return LLVMGetBasicBlockTerminator(self.handle) != (0 as *mut void);
+  return LLVMGetBasicBlockTerminator(self.handle) != nil;
 }

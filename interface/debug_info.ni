@@ -9,20 +9,26 @@ import "interface/value.ni";
 import "interface/builder.ni";
 
 /**
+ * @brief LLVM DWARF builder state with explicit native resource lifetime.
+ * @note Finalize before Dispose, then release the borrowed module/context. A disposed
+ *       value is inert. As with other LLVM handles, do not copy a live owner.
+ */
+pub struct DebugInfo;
+
+/**
  * @brief Create native DWARF builder state for a module and source path.
- * @returns Owned opaque state, or zero if the state allocation fails.
- * @note State is the opaque handle returned by DebugInfoCreate; finalize metadata before
+ * @returns A live debug handle, or an inert handle if native state allocation fails.
+ * @note The handle retains native DIBuilder state; finalize metadata before
  *   disposal. Context/module lifetimes remain caller-controlled.
  */
-pub func DebugInfoCreate(ctx: Context, mod: Module, source_path: string, optimized: bool) -> intptr;
+pub static method(DebugInfo) New(ctx: Context, mod: Module, source_path: string, optimized: bool) -> DebugInfo;
 
 /**
  * @brief Attach a source-level function scope and retain it as the current debug scope.
- * @note State is the opaque handle returned by DebugInfoCreate; finalize metadata before
+ * @note The handle retains native DIBuilder state; finalize metadata before
  *   disposal. Context/module lifetimes remain caller-controlled.
  */
-pub func DebugInfoAttachFunction(
-  state: intptr,
+pub method(DebugInfo) AttachFunction(
   fn_value: Value,
   name: string,
   line: int32,
@@ -31,18 +37,17 @@ pub func DebugInfoAttachFunction(
 
 /**
  * @brief Set builder location within the current debug function scope.
- * @note State is the opaque handle returned by DebugInfoCreate; finalize metadata before
+ * @note The handle retains native DIBuilder state; finalize metadata before
  *   disposal. Context/module lifetimes remain caller-controlled.
  */
-pub func DebugInfoSetLocation(state: intptr, builder: Builder, line: int32) -> void;
+pub method(DebugInfo) SetLocation(builder: Builder, line: int32) -> void;
 
 /**
  * @brief Describe a stack slot as a local or argument in the current debug scope.
- * @note State is the opaque handle returned by DebugInfoCreate; finalize metadata before
+ * @note The handle retains native DIBuilder state; finalize metadata before
  *   disposal. Context/module lifetimes remain caller-controlled.
  */
-pub func DebugInfoDeclare(
-  state: intptr,
+pub method(DebugInfo) Declare(
   builder: Builder,
   slot: Value,
   name: string,
@@ -53,14 +58,26 @@ pub func DebugInfoDeclare(
 
 /**
  * @brief Finalize pending DWARF metadata before disposing builder state.
- * @note State is the opaque handle returned by DebugInfoCreate; finalize metadata before
+ * @note The handle retains native DIBuilder state; finalize metadata before
  *   disposal. Context/module lifetimes remain caller-controlled.
  */
-pub func DebugInfoFinalize(state: intptr) -> void;
+pub method(DebugInfo) Finalize() -> void;
 
 /**
- * @brief Dispose the native DIBuilder and free its state; zero is a no-op.
- * @note State is the opaque handle returned by DebugInfoCreate; finalize metadata before
+ * @brief Dispose the native DIBuilder and clear inline metadata; zero is a no-op.
+ * @note The handle retains native DIBuilder state; finalize metadata before
  *   disposal. Context/module lifetimes remain caller-controlled.
  */
-pub func DebugInfoDispose(state: intptr) -> void;
+pub method(DebugInfo) Dispose() -> void;
+
+/** @brief Whether this handle retains native debug-builder state.
+ * @returns False for default, allocation-failure or disposed state. */
+pub method(DebugInfo) IsValid() -> bool;
+
+/** @brief Transfer the native builder and borrowed metadata handles.
+ * @returns Sole owning value; the moved-from value is inert. */
+pub method(DebugInfo) operator move() -> DebugInfo;
+
+/** @brief Copying would duplicate native DIBuilder disposal ownership.
+ * @returns Deleted operation; move a live owner instead. */
+pub method(DebugInfo) operator copy() -> DebugInfo = delete;

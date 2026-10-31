@@ -5,7 +5,6 @@ module LlvmBuilder;
 import "stdlib:stdlib.ny";
 import "public/handles.ny";
 import "private/llvm_c.ni";
-import "private/c_string.ny";
 import "interface/builder.ni";
 
 /**
@@ -62,20 +61,20 @@ pub method(Builder) BuildEntryAllocaInit(fn: Value, ty: Type, name: string, init
   let cur: *mut void = LLVMGetInsertBlock(self.handle);
   let entry: *mut void = LLVMGetEntryBasicBlock(fn.handle);
   let first: *mut void = LLVMGetFirstInstruction(entry);
-  if first == (0 as *mut void) {
+  if first == nil {
     LLVMPositionBuilderAtEnd(self.handle, entry);
   } else {
     LLVMPositionBuilderBefore(self.handle, first);
   }
 
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildAlloca(self.handle, ty.handle,(&mut cname[0]) as *const int8);
   let slot: Value = Value{handle: handle};
-  if init_val.handle != (0 as *mut void) {
+  if init_val.handle != nil {
     let _st: *mut void = LLVMBuildStore(self.handle, init_val.handle, handle);
   }
 
-  if cur != (0 as *mut void) {
+  if cur != nil {
     LLVMPositionBuilderAtEnd(self.handle, cur);
   }
 
@@ -87,7 +86,7 @@ pub method(Builder) BuildEntryAllocaInit(fn: Value, ty: Type, name: string, init
  * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Builder) BuildAlloca(ty: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildAlloca(self.handle, ty.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -100,11 +99,11 @@ pub method(Builder) BuildAlloca(ty: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildArrayAlloca(ty: Type, count: Value, name: string) -> Value {
-  if self.handle == (0 as *mut void) || ty.handle == (0 as *mut void) || count.handle == (0 as *mut void) {
+  if self.handle == nil || ty.handle == nil || count.handle == nil {
     return Value{handle: 0 as *mut void};
   }
 
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildArrayAlloca(
     self.handle,
     ty.handle,
@@ -120,7 +119,7 @@ pub method(Builder) BuildArrayAlloca(ty: Type, count: Value, name: string) -> Va
  * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Builder) BuildLoad(ty: Type, ptr: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildLoad2(self.handle, ty.handle, ptr.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -141,7 +140,7 @@ pub method(Builder) BuildStore(val: Value, ptr: Value) -> Value {
  * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Builder) BuildAdd(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildAdd(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -208,12 +207,12 @@ pub method(Builder) BuildCondBr(cond: Value, then_bb: BasicBlock, else_bb: Basic
 pub method(Builder) BuildCall(fn_ty: Type, fn: Value, args: *mut Array<Value>, name: string) -> Value {
   unsafe {
     // Peer Module.llvm_cstr_buf — LLVM C API requires NUL-terminated Name.
-    var cname_buf: owned <int8>[] = LlvmCStringBuffer(name);
+    var cname_buf: owned <int8>[] = name.ToCStringBytes();
     let cname: *const int8 = (&mut cname_buf[0]) as *const int8;
     let n: int32 = (*args).len;
     if n <= 0 {
       let handle: *mut void = LLVMBuildCall2(
-        self.handle, fn_ty.handle, fn.handle, 0 as *mut void, 0 as uint32, cname
+        self.handle, fn_ty.handle, fn.handle, 0 as *mut void, 0u32, cname
       );
 
       return Value{handle: handle};
@@ -252,10 +251,10 @@ pub method(Builder) BuildInBoundsGEP(
 ) -> Value {
   unsafe {
     let n: int32 = (*indices).len;
-    var cname: owned <int8>[] = LlvmCStringBuffer(name);
+    var cname: owned <int8>[] = name.ToCStringBytes();
     if n <= 0 {
       let handle: *mut void = LLVMBuildInBoundsGEP2(
-        self.handle, ty.handle, ptr.handle, 0 as *mut void, 0 as uint32,(&mut cname[0]) as *const int8
+        self.handle, ty.handle, ptr.handle, 0 as *mut void, 0u32,(&mut cname[0]) as *const int8
       );
 
       return Value{handle: handle};
@@ -283,7 +282,7 @@ pub method(Builder) BuildInBoundsGEP(
  * @returns LLVM value handle whose storage remains owned by its context or module.
  */
 pub method(Builder) BuildInsertValue(agg: Value, elt: Value, idx: uint32, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildInsertValue(
     self.handle,
     agg.handle,
@@ -314,7 +313,7 @@ pub method(Builder) GetInsertBlock() -> BasicBlock {
  *   not validate them.
  */
 pub method(Builder) BuildSub(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildSub(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -327,7 +326,7 @@ pub method(Builder) BuildSub(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildMul(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildMul(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -340,7 +339,7 @@ pub method(Builder) BuildMul(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildSDiv(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildSDiv(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -353,7 +352,7 @@ pub method(Builder) BuildSDiv(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildUDiv(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildUDiv(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -366,7 +365,7 @@ pub method(Builder) BuildUDiv(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildSRem(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildSRem(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -379,7 +378,7 @@ pub method(Builder) BuildSRem(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildURem(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildURem(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -392,7 +391,7 @@ pub method(Builder) BuildURem(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildAnd(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildAnd(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -405,7 +404,7 @@ pub method(Builder) BuildAnd(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildOr(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildOr(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -418,7 +417,7 @@ pub method(Builder) BuildOr(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildXor(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildXor(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -431,7 +430,7 @@ pub method(Builder) BuildXor(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildShl(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildShl(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -444,7 +443,7 @@ pub method(Builder) BuildShl(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildAShr(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildAShr(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -457,7 +456,7 @@ pub method(Builder) BuildAShr(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildLShr(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildLShr(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -470,7 +469,7 @@ pub method(Builder) BuildLShr(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildNeg(v: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildNeg(self.handle, v.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -483,7 +482,7 @@ pub method(Builder) BuildNeg(v: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildNot(v: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildNot(self.handle, v.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -496,7 +495,7 @@ pub method(Builder) BuildNot(v: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFAdd(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFAdd(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -509,7 +508,7 @@ pub method(Builder) BuildFAdd(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFSub(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFSub(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -522,7 +521,7 @@ pub method(Builder) BuildFSub(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFMul(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFMul(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -535,7 +534,7 @@ pub method(Builder) BuildFMul(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFDiv(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFDiv(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -548,7 +547,7 @@ pub method(Builder) BuildFDiv(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFRem(lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFRem(self.handle, lhs.handle, rhs.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -561,7 +560,7 @@ pub method(Builder) BuildFRem(lhs: Value, rhs: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFNeg(v: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFNeg(self.handle, v.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -574,7 +573,7 @@ pub method(Builder) BuildFNeg(v: Value, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildICmp(pred: int32, lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildICmp(
     self.handle,
     pred,
@@ -593,7 +592,7 @@ pub method(Builder) BuildICmp(pred: int32, lhs: Value, rhs: Value, name: string)
  *   not validate them.
  */
 pub method(Builder) BuildFCmp(pred: int32, lhs: Value, rhs: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFCmp(
     self.handle,
     pred,
@@ -612,7 +611,7 @@ pub method(Builder) BuildFCmp(pred: int32, lhs: Value, rhs: Value, name: string)
  *   not validate them.
  */
 pub method(Builder) BuildTrunc(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildTrunc(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -625,7 +624,7 @@ pub method(Builder) BuildTrunc(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildSExt(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildSExt(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -638,7 +637,7 @@ pub method(Builder) BuildSExt(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildZExt(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildZExt(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -651,7 +650,7 @@ pub method(Builder) BuildZExt(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFPTrunc(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFPTrunc(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -664,7 +663,7 @@ pub method(Builder) BuildFPTrunc(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFPExt(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFPExt(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -677,14 +676,18 @@ pub method(Builder) BuildFPExt(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildSIToFP(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildSIToFP(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
 }
 
+/**
+ * @brief Convert an unsigned LLVM integer value to floating point.
+ * @returns Result value in this builder context; emitted instructions belong to its module.
+ */
 pub method(Builder) BuildUIToFP(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildUIToFP(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -697,14 +700,18 @@ pub method(Builder) BuildUIToFP(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFPToSI(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFPToSI(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
 }
 
+/**
+ * @brief Convert an LLVM floating value to an unsigned integer.
+ * @returns Result value under LLVM floating-to-integer range/poison semantics.
+ */
 pub method(Builder) BuildFPToUI(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFPToUI(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -717,7 +724,7 @@ pub method(Builder) BuildFPToUI(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildBitCast(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildBitCast(self.handle, v.handle, dest.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -730,7 +737,7 @@ pub method(Builder) BuildBitCast(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildPtrToInt(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildPtrToInt(
     self.handle,
     v.handle,
@@ -748,7 +755,7 @@ pub method(Builder) BuildPtrToInt(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildIntToPtr(v: Value, dest: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildIntToPtr(
     self.handle,
     v.handle,
@@ -766,7 +773,7 @@ pub method(Builder) BuildIntToPtr(v: Value, dest: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildExtractValue(agg: Value, idx: uint32, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildExtractValue(self.handle, agg.handle, idx,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -779,7 +786,7 @@ pub method(Builder) BuildExtractValue(agg: Value, idx: uint32, name: string) -> 
  *   not validate them.
  */
 pub method(Builder) BuildSelect(cond: Value, then_v: Value, else_v: Value, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildSelect(
     self.handle,
     cond.handle,
@@ -810,7 +817,7 @@ pub method(Builder) BuildSwitch(v: Value, else_bb: BasicBlock, num_cases: uint32
  *   not validate them.
  */
 pub method(Builder) BuildPhi(ty: Type, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildPhi(self.handle, ty.handle,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};
@@ -823,7 +830,7 @@ pub method(Builder) BuildPhi(ty: Type, name: string) -> Value {
  *   not validate them.
  */
 pub method(Builder) BuildFence(ordering: int32, single_thread: int32, name: string) -> Value {
-  var cname: owned <int8>[] = LlvmCStringBuffer(name);
+  var cname: owned <int8>[] = name.ToCStringBytes();
   let handle: *mut void = LLVMBuildFence(self.handle, ordering, single_thread,(&mut cname[0]) as *const int8);
 
   return Value{handle: handle};

@@ -5,7 +5,6 @@ module LlvmValue;
 import "stdlib:stdlib.ny";
 import "public/handles.ny";
 import "private/llvm_c.ni";
-import "private/c_string.ny";
 import "interface/value.ni";
 
 /**
@@ -67,26 +66,32 @@ pub static method(Value) ConstNull(ty: Type) -> Value {
 }
 
 /**
- * @brief `LLVMIsNull`. True for a constant null, including `ConstantPointerNull`.
+ * @brief Test whether this LLVM value is a null constant.
+ * @returns True when LLVMIsNull reports a null-valued constant.
  */
 pub method(Value) IsNull() -> bool {
   return LLVMIsNull(self.handle) != 0;
 }
 
-/** @brief `LLVMIsConstant`. */
+/**
+ * @brief Test whether this value is an LLVM constant.
+ * @returns True when LLVM classifies this value as constant.
+ */
 pub method(Value) IsConstant() -> bool {
   return LLVMIsConstant(self.handle) != 0;
 }
 
 /**
- * @brief `LLVMIsAConstantInt` is non-null.
+ * @brief Test whether this value is an integer constant.
+ * @returns True when LLVM returns a constant-integer reference.
  */
 pub method(Value) IsConstInt() -> bool {
-  return LLVMIsAConstantInt(self.handle) != (0 as *mut void);
+  return LLVMIsAConstantInt(self.handle) != nil;
 }
 
 /**
- * @brief `LLVMConstIntGetZExtValue`. Caller has checked `IsConstInt`.
+ * @brief Read an integer constant after checking IsConstInt.
+ * @returns The zero-extended uint64 value under LLVM constant-integer preconditions.
  */
 pub method(Value) ConstIntZExt() -> uint64 {
   return LLVMConstIntGetZExtValue(self.handle);
@@ -177,7 +182,7 @@ pub static method(Value) ConstNamedStruct(ty: Type, elems: *mut Array<Value>) ->
   unsafe {
     let n: int32 = (*elems).len;
     if n <= 0 {
-      let handle: *mut void = LLVMConstNamedStruct(ty.handle, 0 as *mut void, 0 as uint32);
+      let handle: *mut void = LLVMConstNamedStruct(ty.handle, 0 as *mut void, 0u32);
 
       return Value{handle: handle};
     }
@@ -208,7 +213,7 @@ pub static method(Value) ConstInBoundsGEP(ty: Type, base: Value, indices: *mut A
   unsafe {
     let n: int32 = (*indices).len;
     if n <= 0 {
-      let handle: *mut void = LLVMConstInBoundsGEP2(ty.handle, base.handle, 0 as *mut void, 0 as uint32);
+      let handle: *mut void = LLVMConstInBoundsGEP2(ty.handle, base.handle, 0 as *mut void, 0u32);
 
       return Value{handle: handle};
     }
@@ -229,13 +234,14 @@ pub static method(Value) ConstInBoundsGEP(ty: Type, base: Value, indices: *mut A
 }
 
 /**
- * @brief `LLVMConstArray` with Nyra `Array` → C pointer+count.
+ * @brief Construct an LLVM constant array from a borrowed value array.
+ * @returns Constant value owned by the element type context.
  */
 pub static method(Value) ConstArray(elem_ty: Type, elems: *mut Array<Value>) -> Value {
   unsafe {
     let n: int32 = (*elems).len;
     if n <= 0 {
-      let handle: *mut void = LLVMConstArray(elem_ty.handle, 0 as *mut void, 0 as uint32);
+      let handle: *mut void = LLVMConstArray(elem_ty.handle, 0 as *mut void, 0u32);
 
       return Value{handle: handle};
     }
@@ -256,7 +262,8 @@ pub static method(Value) ConstArray(elem_ty: Type, elems: *mut Array<Value>) -> 
 }
 
 /**
- * @brief `LLVMConstBitCast`.
+ * @brief Reinterpret an LLVM constant using a compatible destination type.
+ * @returns Constant value owned by the destination LLVM context.
  */
 pub static method(Value) ConstBitCast(v: Value, to: Type) -> Value {
   let handle: *mut void = LLVMConstBitCast(v.handle, to.handle);
@@ -265,7 +272,8 @@ pub static method(Value) ConstBitCast(v: Value, to: Type) -> Value {
 }
 
 /**
- * @brief `LLVMConstIntToPtr`.
+ * @brief Convert an integer constant to a target pointer type.
+ * @returns Constant pointer value owned by the LLVM context.
  */
 pub static method(Value) ConstIntToPtr(v: Value, to: Type) -> Value {
   let handle: *mut void = LLVMConstIntToPtr(v.handle, to.handle);
@@ -330,18 +338,20 @@ pub method(Value) SetThreadLocal(b: int32) -> void {
 pub method(Value) HasEntryBlock() -> bool {
   let entry: *mut void = LLVMGetEntryBasicBlock(self.handle);
 
-  return entry != (0 as *mut void);
+  return entry != nil;
 }
 
 /**
- * @brief True when this function is still a declaration (no body) — peer `LLVMIsDeclaration`.
+ * @brief Test whether this global/function lacks a definition.
+ * @returns True for an LLVM declaration.
  */
 pub method(Value) IsDeclaration() -> bool {
   return LLVMIsDeclaration(self.handle) != 0;
 }
 
 /**
- * @brief True when entry exists and contains at least one instruction (real body).
+ * @brief Inspect a function for a nonempty entry basic block.
+ * @returns False for declarations or an empty/missing entry; true when it contains an instruction.
  */
 pub method(Value) HasEntryCode() -> bool {
   if self.IsDeclaration() {
@@ -349,20 +359,18 @@ pub method(Value) HasEntryCode() -> bool {
   }
 
   let entry: *mut void = LLVMGetEntryBasicBlock(self.handle);
-  if entry == (0 as *mut void) {
+  if entry == nil {
     return false;
   }
 
   let first: *mut void = LLVMGetFirstInstruction(entry);
 
-  return first != (0 as *mut void);
+  return first != nil;
 }
 
 /**
- * @brief Delete an empty entry basic block so a linkonce_odr body can be refilled.
- * @note An empty entry makes `LLVMIsDeclaration` false but is not a real body.
- *
- * @brief Peer Go `llvm.InlineAsm` (ATT dialect, hasSideEffects=true for stmt asm).
+ * @brief Construct an LLVM inline-assembly constant with explicit constraints and effect flags.
+ * @returns Inline-assembly value owned by the function type context.
  */
 pub static method(Value) InlineAsm(
   ft: Type,
@@ -373,8 +381,8 @@ pub static method(Value) InlineAsm(
   dialect: int32,
   can_throw: int32
 ) -> Value {
-  var casm: owned <int8>[] = LlvmCStringBuffer(asm_text);
-  var ccons: owned <int8>[] = LlvmCStringBuffer(constraints);
+  var casm: owned <int8>[] = asm_text.ToCStringBytes();
+  var ccons: owned <int8>[] = constraints.ToCStringBytes();
   let handle: *mut void = LLVMGetInlineAsm(
     ft.handle,
     (&mut casm[0]) as *const int8,
@@ -390,14 +398,17 @@ pub static method(Value) InlineAsm(
   return Value{handle: handle};
 }
 
+/**
+ * @brief Remove an empty function entry block so a deferred body can be emitted.
+ */
 pub method(Value) DeleteEmptyEntryBlock() -> void {
   let entry: *mut void = LLVMGetEntryBasicBlock(self.handle);
-  if entry == (0 as *mut void) {
+  if entry == nil {
     return;
   }
 
   let first: *mut void = LLVMGetFirstInstruction(entry);
-  if first != (0 as *mut void) {
+  if first != nil {
     return;
   }
 
@@ -410,7 +421,7 @@ pub method(Value) DeleteEmptyEntryBlock() -> void {
  */
 pub method(Value) AddFunctionEnumAttribute(name: string, value: uint64) -> bool {
   let kind: uint32 = LLVMGetEnumAttributeKindForName(name.data, name.length as uintptr);
-  if kind == (0 as uint32) {
+  if kind == (0u32) {
     return false;
   }
 
@@ -426,7 +437,7 @@ pub method(Value) AddFunctionEnumAttribute(name: string, value: uint64) -> bool 
  */
 pub method(Value) AddEnumAttributeAtIndex(index: uint32, name: string, value: uint64) -> bool {
   let kind: uint32 = LLVMGetEnumAttributeKindForName(name.data, name.length as uintptr);
-  if kind == (0 as uint32) {
+  if kind == (0u32) {
     return false;
   }
 
@@ -442,7 +453,7 @@ pub method(Value) AddEnumAttributeAtIndex(index: uint32, name: string, value: ui
  */
 pub method(Value) AddCallSiteEnumAttribute(index: uint32, name: string, value: uint64) -> bool {
   let kind: uint32 = LLVMGetEnumAttributeKindForName(name.data, name.length as uintptr);
-  if kind == (0 as uint32) {
+  if kind == (0u32) {
     return false;
   }
 
@@ -458,7 +469,7 @@ pub method(Value) AddCallSiteEnumAttribute(index: uint32, name: string, value: u
  */
 pub method(Value) AddTypeAttributeAtIndex(index: uint32, name: string, type_handle: *mut void) -> bool {
   let kind: uint32 = LLVMGetEnumAttributeKindForName(name.data, name.length as uintptr);
-  if kind == (0 as uint32) {
+  if kind == (0u32) {
     return false;
   }
 
@@ -478,7 +489,7 @@ pub method(Value) AddTypeAttributeAtIndex(index: uint32, name: string, type_hand
  */
 pub method(Value) AddCallSiteTypeAttribute(index: uint32, name: string, type_handle: *mut void) -> bool {
   let kind: uint32 = LLVMGetEnumAttributeKindForName(name.data, name.length as uintptr);
-  if kind == (0 as uint32) {
+  if kind == (0u32) {
     return false;
   }
 

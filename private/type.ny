@@ -18,7 +18,7 @@ import "interface/type.ni";
  * @returns LLVM type handle whose storage remains owned by its context.
  */
 pub static method(Type) Pointer(elem: Type) -> Type {
-  let handle: *mut void = LLVMPointerType(elem.handle, 0 as uint32);
+  let handle: *mut void = LLVMPointerType(elem.handle, 0u32);
 
   return Type{handle: handle};
 }
@@ -34,7 +34,7 @@ pub static method(Type) Function(ret: Type, params: *mut Array<Type>, is_var_arg
   unsafe {
     let n: int32 = (*params).len;
     if n <= 0 {
-      let handle: *mut void = LLVMFunctionType(ret.handle, 0 as *mut void, 0 as uint32, is_var_arg);
+      let handle: *mut void = LLVMFunctionType(ret.handle, 0 as *mut void, 0u32, is_var_arg);
 
       return Type{handle: handle};
     }
@@ -61,7 +61,7 @@ pub method(Type) StructSetBody(fields: *mut Array<Type>, packed: int32) -> void 
   unsafe {
     let n: int32 = (*fields).len;
     if n <= 0 {
-      LLVMStructSetBody(self.handle, 0 as *mut void, 0 as uint32, packed);
+      LLVMStructSetBody(self.handle, 0 as *mut void, 0u32, packed);
       return;
     }
 
@@ -136,6 +136,10 @@ pub method(Type) StructElementCount() -> uint32 {
   return LLVMCountStructElementTypes(self.handle);
 }
 
+/**
+ * @brief Read the number of elements in an LLVM array type.
+ * @returns The array element count as uint64; input must be an array type.
+ */
 pub method(Type) ArrayLength() -> uint64 {
   return LLVMGetArrayLength2(self.handle);
 }
@@ -164,7 +168,7 @@ pub method(Type) ParamCount() -> uint32 {
  */
 pub method(Type) ParamType(i: uint32) -> Type {
   let n: uint32 = LLVMCountParamTypes(self.handle);
-  if n == (0 as uint32) {
+  if n == (0u32) {
     return Type{handle: 0 as *mut void};
   }
 

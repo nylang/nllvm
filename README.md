@@ -24,8 +24,8 @@ The C shim under `private/` is linked with the pinned LLVM toolchain by the
 Nyra compiler. The development toolchain remains at `third_party/llvm` in
 NyraLang.
 
-See [MIGRATION.md](MIGRATION.md) for source history and the current workspace
-layout. Run the package suite from NyraLang with
+See [MIGRATION.md](MIGRATION.md) for source history and portable dependency
+setup. Run the package suite from NyraLang with
 `python3 nyra.py test --package nllvm`. Test data is owned by this repository.
 
 ## Portable Git dependency
